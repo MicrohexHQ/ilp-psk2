@@ -150,7 +150,8 @@ export interface SendSingleChunkParams {
   sharedSecret: Buffer,
   destinationAccount: string,
   minDestinationAmount?: BigNumber | string | number,
-  id?: Buffer
+  id?: Buffer,
+  applicationData?: Buffer
 }
 
 export interface SendResult {
@@ -169,7 +170,8 @@ export async function sendSingleChunk (plugin: any, params: SendSingleChunkParam
     sharedSecret,
     destinationAccount,
     minDestinationAmount = 0,
-    id = crypto.randomBytes(16)
+    id = crypto.randomBytes(16),
+    applicationData = Buffer.alloc(0)
   } = params
 
   assert(sharedSecret, 'sharedSecret is required')
@@ -188,7 +190,8 @@ export async function sendSingleChunk (plugin: any, params: SendSingleChunkParam
     // we deliver slightly too much (for example because of rounding issues) and we
     // don't want the receiver to reject the transfer because of this
     paymentAmount: constants.MAX_UINT64,
-    chunkAmount: new BigNumber(minDestinationAmount)
+    chunkAmount: new BigNumber(minDestinationAmount),
+    applicationData
   })
   const fulfillment = dataToFulfillment(sharedSecret, data)
   const executionCondition = fulfillmentToCondition(fulfillment)

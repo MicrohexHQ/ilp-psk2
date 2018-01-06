@@ -25,6 +25,7 @@ export interface PaymentHandler {
 export interface PaymentHandlerParams {
   paymentId: string,
   expectedAmount: string,
+  prepare: any,
   accept: () => Promise<PaymentReceived>,
   reject: (message: string) => void
 }
@@ -188,7 +189,8 @@ export class Receiver {
         paymentId: request.paymentId,
         sequence: request.sequence,
         paymentAmount: record.received,
-        chunkAmount: new BigNumber(prepare.amount)
+        chunkAmount: new BigNumber(prepare.amount),
+        applicationData
       })
       return this.reject('F99', '', data)
     }
@@ -218,7 +220,7 @@ export class Receiver {
     }
 
     // Check if the receiver wants to accept the payment
-    if (record.acceptedByReceiver === null) {
+    if (record.acceptedByReceiver !== false) {
       // This promise resolves when the user has either accepted or rejected the payment
       await new Promise(async (resolve, reject) => {
         // Reject the payment if:
@@ -230,19 +232,11 @@ export class Receiver {
             // TODO include first chunk data
             paymentId,
             expectedAmount: record.expected.toString(10),
+            prepare,
             accept: async (): Promise<PaymentReceived> => {
               // Resolve the above promise so that we actually fulfill the incoming chunk
               record.acceptedByReceiver = true
               resolve()
-
-              // The promise returned to the receiver will be fulfilled
-              // when the whole payment is finished
-              const payment = await new Promise((resolve, reject) => {
-                record.finishedPromise = { resolve, reject }
-                // TODO should the payment timeout after some time?
-              }) as PaymentReceived
-
-              return payment
             },
             reject: (message: string) => {
               debug('receiver rejected payment with message:', message)
