@@ -26,7 +26,7 @@ export interface PaymentHandlerParams {
   paymentId: string,
   expectedAmount: string,
   prepare: any,
-  accept: () => Promise<PaymentReceived>,
+  accept: () => Promise<void>,
   reject: (message: string) => void
 }
 
@@ -189,8 +189,7 @@ export class Receiver {
         paymentId: request.paymentId,
         sequence: request.sequence,
         paymentAmount: record.received,
-        chunkAmount: new BigNumber(prepare.amount),
-        applicationData
+        chunkAmount: new BigNumber(prepare.amount)
       })
       return this.reject('F99', '', data)
     }
@@ -233,7 +232,7 @@ export class Receiver {
             paymentId,
             expectedAmount: record.expected.toString(10),
             prepare,
-            accept: async (): Promise<PaymentReceived> => {
+            accept: async (): Promise<void> => {
               // Resolve the above promise so that we actually fulfill the incoming chunk
               record.acceptedByReceiver = true
               resolve()
